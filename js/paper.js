@@ -17,9 +17,11 @@
   // 两类版式采用不同页边距策略：
   //   box   —— 方格/点阵/田字格等二维网格：四边对称舒适页边距，保证整格整行；
   //   ruled —— 横线/信纸/笔记等一维横线：仅上下页边距，横线铺满左右（无左右页边距）。
-  var BOX_M = 12;     // 方格类四周边距(mm)
-  var RULED_M = 12;   // 横格类上下页边距(mm)
-  var RED_LINE = 18;  // 横格类左侧红色页边线位置(mm)
+  var BOX_M = 12;        // 方格类（有外框时）四周边距(mm)：舒适，让外框离纸边有呼吸感
+  var BOX_M_OFF = 5;     // 方格类（无外框时）仅留打印机安全边距：网格几乎铺满整页
+  var RULED_M = 12;      // 横格类（有外框时）上下边距(mm)
+  var RULED_M_OFF = 5;   // 横格类（无外框时）仅留打印机安全上下边距：横线铺到纸边
+  var RED_LINE = 18;     // 横格类左侧红色页边线位置(mm)
 
   // 每种版式对应的页边距模式
   var MODES = {
@@ -32,7 +34,8 @@
     staff: "box", comic: "box", cuotiben: "ruled", yuedu: "ruled",
     qiangedraft: "box", blank: "ruled"
   };
-  var _mode = "box"; // 由 render() 按 type 设置，供各渲染器内的 geom() 读取
+  var _mode = "box";   // 由 render() 按 type 设置，供各渲染器内的 geom() 读取
+  var _frame = true;   // 由 render() 按是否加外框设置：决定是否采用舒适边距
 
   function r(n) { return Math.round(n * 100) / 100; }
   function L(x1, y1, x2, y2, c, sw) {
@@ -65,14 +68,16 @@
       oy = (H - nY * cell) / 2;
       iw = nX * cell; ih = nY * cell;
     } else if (mode === "ruled") {
-      // 横格：仅上下页边距，横线铺满左右（无左右页边距）
-      nY = Math.max(1, Math.floor((H - 2 * RULED_M) / cell));
+      // 横格：仅上下页边距，横线铺满左右（无左右页边距）；有框舒适、无框仅安全边距
+      var rm = _frame ? RULED_M : RULED_M_OFF;
+      nY = Math.max(1, Math.floor((H - 2 * rm) / cell));
       nX = Math.max(1, Math.floor(W / cell)); // 仅占位，横格实际只用到 nY
-      ox = 0; oy = RULED_M; iw = W; ih = nY * cell;
+      ox = 0; oy = rm; iw = W; ih = nY * cell;
     } else {
-      // 方格：四边对称页边距，框线恰好落在网格边界
-      nX = Math.max(1, Math.floor((W - 2 * BOX_M) / cell));
-      nY = Math.max(1, Math.floor((H - 2 * BOX_M) / cell));
+      // 方格：四边对称页边距；有框舒适(12mm)、无框仅安全边距(5mm)，框线恰好落网格边界
+      var bm = _frame ? BOX_M : BOX_M_OFF;
+      nX = Math.max(1, Math.floor((W - 2 * bm) / cell));
+      nY = Math.max(1, Math.floor((H - 2 * bm) / cell));
       ox = (W - nX * cell) / 2;
       oy = (H - nY * cell) / 2;
       iw = nX * cell; ih = nY * cell;
@@ -308,6 +313,7 @@
     var thumb = !!opts.thumb;
     var frame = opts.frame !== false && !thumb;   // 仅完整预览/打印加框，缩略图保持干净
     _mode = MODES[type] || "box";                 // 设定当前版式页边距模式，供渲染器内 geom() 读取
+    _frame = frame;                                // 设定是否加外框，决定采用舒适边距还是最小安全边距
     var sw = 0.35;
     var fn = RENDERERS[type] || gridType;
     var inner = fn(cell, color, sw, thumb);
