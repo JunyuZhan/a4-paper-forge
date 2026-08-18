@@ -41,6 +41,10 @@
             <label>格子数量 / 大小</label>
             <div id="sizes" class="sizes"></div>
           </div>
+          <div class="ctrl-group">
+            <label>页面外框</label>
+            <label class="switch"><input id="frameToggle" type="checkbox" checked /> 加外框</label>
+          </div>
           <div class="ctrl-group actions">
             <button id="printBtn" class="btn primary">🖨️ 一键打印</button>
             <button id="pngBtn" class="btn">⬇️ PNG</button>
@@ -61,7 +65,7 @@
 
       <section class="gallery-wrap no-print">
         <div class="gallery-head">
-          <h2>全部版式</h2>
+          <h2 id="galTitle">全部版式</h2>
           <span class="gal-count">当前 <b id="galCount">0</b> 种</span>
         </div>
         <div id="gallery" class="gallery"></div>

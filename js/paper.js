@@ -110,7 +110,7 @@
   function pinyinmi(cell, color, sw, thumb) { return pinyinGeneric(cell, color, sw, thumb, true); }
 
   function fourline(cell, color, sw, thumb) {
-    var s = "", rows = Math.floor(H / cell); if (thumb) rows = Math.min(rows, 10), rows = Math.min(rows, 10);
+    var s = "", rows = Math.floor(H / cell); if (thumb) rows = Math.min(rows, 10);
     var j, y;
     for (j = 0; j < rows; j++) {
       y = j * cell;
@@ -265,12 +265,18 @@
     var color = opts.color || "#333333";
     var cell = opts.cell || 14;
     var thumb = !!opts.thumb;
+    var frame = opts.frame !== false;   // 默认加页面外框
     var sw = 0.35;
     var fn = RENDERERS[type] || gridType;
     var inner = fn(cell, color, sw, thumb);
+    var frameSvg = "";
+    if (frame && !thumb) {
+      // 距边 8mm 的细实线外框（仅完整预览/打印时绘制，缩略图保持干净）
+      frameSvg = R(8, 8, W - 16, H - 16, color, 0.7);
+    }
     return '<svg class="paper-svg" viewBox="0 0 210 297" preserveAspectRatio="xMidYMid meet" ' +
       'xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="210" height="297" fill="#ffffff"/>' +
-      inner + '</svg>';
+      frameSvg + inner + '</svg>';
   }
 
   window.Paper = { render: render };

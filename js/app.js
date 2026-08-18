@@ -12,7 +12,8 @@
     familyId: null,
     type: null,
     color: "#333333",
-    cell: 14
+    cell: 14,
+    frame: true
   };
 
   function familyById(id) {
@@ -41,7 +42,15 @@
     var li = document.createElement("li");
     li.className = "cat" + (state.cat === key ? " active" : "");
     li.innerHTML = '<span class="cat-name">' + name + '</span><span class="cnt">' + n + "</span>";
-    li.onclick = function () { state.cat = key; buildSidebar(); renderGallery(); };
+    li.onclick = function () {
+      state.cat = key;
+      buildSidebar();
+      renderGallery();
+      if (key !== "all") {
+        var g = document.getElementById("gallery");
+        if (g) g.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
     return li;
   }
 
@@ -116,7 +125,7 @@
   }
 
   function renderPreview() {
-    $("#sheet").innerHTML = window.Paper.render(state.type, { color: state.color, cell: state.cell });
+    $("#sheet").innerHTML = window.Paper.render(state.type, { color: state.color, cell: state.cell, frame: state.frame });
   }
 
   /* ---------------- 画廊 ---------------- */
@@ -133,6 +142,13 @@
       return true;
     });
     $("#galCount").textContent = list.length;
+    var title = "全部版式";
+    if (state.cat !== "all") {
+      for (var k = 0; k < window.CATEGORIES.length; k++) {
+        if (window.CATEGORIES[k].key === state.cat) { title = window.CATEGORIES[k].icon + " " + window.CATEGORIES[k].name; break; }
+      }
+    }
+    if ($("#galTitle")) $("#galTitle").textContent = title;
     if (!list.length) { grid.innerHTML = '<p class="empty">没有找到匹配的版式，换个关键词试试～</p>'; return; }
     list.forEach(function (v) {
       var card = document.createElement("button");
@@ -187,6 +203,7 @@
     buildColorBar();
     buildSizeBar();
     $("#search").addEventListener("input", function (e) { state.search = e.target.value; renderGallery(); });
+    $("#frameToggle").addEventListener("change", function (e) { state.frame = e.target.checked; renderPreview(); });
     $("#printBtn").addEventListener("click", function () { window.print(); });
     $("#svgBtn").addEventListener("click", downloadSVG);
     $("#pngBtn").addEventListener("click", downloadPNG);
