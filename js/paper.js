@@ -6,13 +6,33 @@
  *
  * 关键约束（解决“半格/半行/页边距”问题）：
  *   - 可打印区域必须是 cell 的整数倍，外框正好压在网格边界上 -> 无半格、无半行；
- *   - 四周预留 MIN_M(8mm) 安全页边距，避开打印机不可打印区；
+ *   - 按版式类型采用不同页边距策略：
+ *       box   —— 方格/点阵/田字格等二维网格：四边对称舒适页边距(BOX_M)；
+ *       ruled —— 横线/信纸/笔记等一维横线：仅上下页边距(RULED_M)，横线左右铺满(无左右留白)；
  *   - 所有内容裁剪进外框，框外绝不出现线条。
  * ========================================================================= */
 (function () {
   "use strict";
   var W = 210, H = 297;
-  var MIN_M = 8; // 打印机安全页边距(mm)：保证框线/内容离纸边≥此值，且可打印区是格子整数倍
+  // 两类版式采用不同页边距策略：
+  //   box   —— 方格/点阵/田字格等二维网格：四边对称舒适页边距，保证整格整行；
+  //   ruled —— 横线/信纸/笔记等一维横线：仅上下页边距，横线铺满左右（无左右页边距）。
+  var BOX_M = 12;     // 方格类四周边距(mm)
+  var RULED_M = 12;   // 横格类上下页边距(mm)
+  var RED_LINE = 18;  // 横格类左侧红色页边线位置(mm)
+
+  // 每种版式对应的页边距模式
+  var MODES = {
+    tian: "box", mi: "box", huigong: "box", jiugong: "box",
+    pinyintian: "box", pinyinmi: "box",
+    fourline: "ruled", threeline: "ruled",
+    grid: "box", dot: "box", coordinate: "box", sumiao: "box", bullet: "box",
+    ruled: "ruled", ruled2: "ruled", cornell: "ruled", letter: "ruled",
+    arithmetic: "box", shushi: "ruled",
+    staff: "box", comic: "box", cuotiben: "ruled", yuedu: "ruled",
+    qiangedraft: "box", blank: "ruled"
+  };
+  var _mode = "box"; // 由 render() 按 type 设置，供各渲染器内的 geom() 读取
 
   function r(n) { return Math.round(n * 100) / 100; }
   function L(x1, y1, x2, y2, c, sw) {
@@ -31,23 +51,33 @@
       '" fill="none" stroke="' + c + '" stroke-width="' + sw + '"/>';
   }
 
-  /* 根据格子尺寸计算“整数倍”几何：外框 = 最外网格线，框内整格整行 */
-  function geom(cell, thumb) {
-    var nX, nY, ox, oy;
+  /* 计算“整数倍”几何（解决半格/半行/页边距问题）：
+   *   box    —— 四边对称页边距，可打印区是 cell 整数倍，外框压网格边界；
+   *   ruled  —— 仅上下页边距，横线左右铺满（ox=0, iw=W），避免“左右页边距”浪费。 */
+  function geom(cell, thumb, mode) {
+    mode = mode || _mode;
+    var nX, nY, ox, oy, iw, ih;
     if (thumb) {
       // 缩略图：居中、限量，便于画廊清晰预览（无外框）
       nX = Math.min(Math.max(1, Math.floor(W / cell)), 9);
       nY = Math.min(Math.max(1, Math.floor(H / cell)), 12);
       ox = (W - nX * cell) / 2;
       oy = (H - nY * cell) / 2;
+      iw = nX * cell; ih = nY * cell;
+    } else if (mode === "ruled") {
+      // 横格：仅上下页边距，横线铺满左右（无左右页边距）
+      nY = Math.max(1, Math.floor((H - 2 * RULED_M) / cell));
+      nX = Math.max(1, Math.floor(W / cell)); // 仅占位，横格实际只用到 nY
+      ox = 0; oy = RULED_M; iw = W; ih = nY * cell;
     } else {
-      // 完整页：在预留安全页边距后，取能容纳的整格数，框线恰好落在网格边界
-      nX = Math.max(1, Math.floor((W - 2 * MIN_M) / cell));
-      nY = Math.max(1, Math.floor((H - 2 * MIN_M) / cell));
+      // 方格：四边对称页边距，框线恰好落在网格边界
+      nX = Math.max(1, Math.floor((W - 2 * BOX_M) / cell));
+      nY = Math.max(1, Math.floor((H - 2 * BOX_M) / cell));
       ox = (W - nX * cell) / 2;
       oy = (H - nY * cell) / 2;
+      iw = nX * cell; ih = nY * cell;
     }
-    return { nX: nX, nY: nY, ox: ox, oy: oy, iw: nX * cell, ih: nY * cell, c: cell };
+    return { nX: nX, nY: nY, ox: ox, oy: oy, iw: iw, ih: ih, c: cell, mode: mode };
   }
 
   /* 基础方格网：只画内部线，外框由 frame 负责（即最外网格线），杜绝半格 */
@@ -173,18 +203,18 @@
   /* ---------- 横线笔记（行距=cell，整行充满框高，无半行） ---------- */
   function ruled(cell, color, sw, thumb) {
     var g = geom(cell, thumb), s = "", j, y;
-    for (j = 1; j <= g.nY; j++) { y = g.oy + j * cell; s += L(g.ox, y, g.ox + g.iw, y, color, sw); }
-    s += L(g.ox + 18, g.oy, g.ox + 18, g.oy + g.ih, color, sw * 1.8);
+    for (j = 1; j <= g.nY; j++) { y = g.oy + j * cell; s += L(g.ox + RED_LINE, y, g.ox + g.iw, y, color, sw); }
+    s += L(g.ox + RED_LINE, g.oy, g.ox + RED_LINE, g.oy + g.ih, color, sw * 1.8);
     return s;
   }
   function ruled2(cell, color, sw, thumb) {
     var g = geom(cell, thumb), s = "", j, y;
     for (j = 1; j <= g.nY; j++) {
       y = g.oy + j * cell;
-      s += L(g.ox, y, g.ox + g.iw, y, color, sw);
-      s += L(g.ox, y + cell * 0.18, g.ox + g.iw, y + cell * 0.18, color, sw * 0.7);
+      s += L(g.ox + RED_LINE, y, g.ox + g.iw, y, color, sw);
+      s += L(g.ox + RED_LINE, y + cell * 0.18, g.ox + g.iw, y + cell * 0.18, color, sw * 0.7);
     }
-    s += L(g.ox + 18, g.oy, g.ox + 18, g.oy + g.ih, color, sw * 1.8);
+    s += L(g.ox + RED_LINE, g.oy, g.ox + RED_LINE, g.oy + g.ih, color, sw * 1.8);
     return s;
   }
   function cornell(cell, color, sw, thumb) {
@@ -277,6 +307,7 @@
     var cell = opts.cell || 14;
     var thumb = !!opts.thumb;
     var frame = opts.frame !== false && !thumb;   // 仅完整预览/打印加框，缩略图保持干净
+    _mode = MODES[type] || "box";                 // 设定当前版式页边距模式，供渲染器内 geom() 读取
     var sw = 0.35;
     var fn = RENDERERS[type] || gridType;
     var inner = fn(cell, color, sw, thumb);

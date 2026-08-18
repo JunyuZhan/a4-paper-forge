@@ -68,7 +68,7 @@
     /* 数学专用 */
     { id: "suanfa", name: "算术本", cat: "math", type: "arithmetic", sizeKeys: ["7", "10"], desc: "每格带斜线，列竖式与算术。" },
     { id: "shushi", name: "竖式计算纸", cat: "math", type: "shushi", sizeKeys: ["10", "14"], desc: "加粗基准线，多位数竖式专用。" },
-    { id: "shuxue-tian", name: "数学田字格", cat: "math", type: "tian", sizeKeys: ["14", "20"], desc: "数字书写田字格，规范笔顺。" },
+    { id: "shuxue-tian", name: "数字田字格", cat: "hanzi", type: "tian", sizeKeys: ["14", "20"], desc: "数字书写田字格，规范数字笔顺与占位（原误置于数学类，实为田字格）。" },
 
     /* 草稿空白 */
     { id: "blank", name: "空白纸", cat: "draft", type: "blank", sizeKeys: ["fx"], colorKeys: ["black"], desc: "纯白 A4，自由发挥。" },
