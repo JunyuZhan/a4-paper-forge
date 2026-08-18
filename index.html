@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A4 纸样工坊 · 数百种打印纸版式</title>
+  <meta name="description" content="数百种 A4 打印纸版式：书法纸、拼音纸、田字格、方格本、坐标纸、康奈尔笔记等，支持颜色与格子数量自定义，一键打印。" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <header class="topbar no-print">
+    <div class="brand">
+      <span class="logo">📐</span>
+      <div>
+        <h1>A4 纸样工坊</h1>
+        <p>数百种打印纸版式 · 颜色/格子自由定制 · 一键打印</p>
+      </div>
+    </div>
+    <div class="search-box">
+      <input id="search" type="search" placeholder="搜索：田字格、五线谱、康奈尔…" />
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar no-print">
+      <h2>分类</h2>
+      <ul id="cats" class="cats"></ul>
+      <div class="tip">
+        共 <b id="totalTip">0</b> 种版式<br />点击右侧卡片即可预览
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="preview-wrap" id="printRoot">
+        <div class="controls no-print">
+          <div class="ctrl-group">
+            <label>颜色</label>
+            <div id="colors" class="colors"></div>
+          </div>
+          <div class="ctrl-group">
+            <label>格子数量 / 大小</label>
+            <div id="sizes" class="sizes"></div>
+          </div>
+          <div class="ctrl-group actions">
+            <button id="printBtn" class="btn primary">🖨️ 一键打印</button>
+            <button id="pngBtn" class="btn">⬇️ PNG</button>
+            <button id="svgBtn" class="btn">⬇️ SVG</button>
+            <button id="randBtn" class="btn ghost">🎲 随机</button>
+          </div>
+        </div>
+
+        <div class="sheet-meta no-print">
+          <h3 id="curName">—</h3>
+          <p id="curDesc"></p>
+        </div>
+
+        <div class="sheet-stage">
+          <div id="sheet" class="sheet"></div>
+        </div>
+      </section>
+
+      <section class="gallery-wrap no-print">
+        <div class="gallery-head">
+          <h2>全部版式</h2>
+          <span class="gal-count">当前 <b id="galCount">0</b> 种</span>
+        </div>
+        <div id="gallery" class="gallery"></div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="footer no-print">
+    <span>A4 纸样工坊 · 静态站点 · 数据全部在本地生成，刷新即所得</span>
+  </footer>
+
+  <script src="./js/data.js"></script>
+  <script src="./js/paper.js"></script>
+  <script src="./js/app.js"></script>
+  <script>
+    // 在页脚/侧栏填充总数提示
+    document.getElementById("totalTip").textContent = window.CATALOG.length;
+  </script>
+</body>
+</html>
