@@ -34,7 +34,10 @@
     { key: "math", name: "数学专用", icon: "➗" },
     { key: "draft", name: "草稿空白", icon: "📄" },
     { key: "special", name: "音乐绘画", icon: "🎼" },
-    { key: "journal", name: "手账特殊", icon: "📔" }
+    { key: "journal", name: "手账特殊", icon: "📔" },
+    { key: "shufa", name: "书法纸", icon: "🖌️" },
+    { key: "zuowen", name: "作文纸", icon: "📃" },
+    { key: "legal", name: "法律文书", icon: "⚖️" }
   ];
 
   /* 每个家族: id, name, cat, type, sizeKeys, desc, colorKeys(可选) */
@@ -44,8 +47,13 @@
     { id: "mi", name: "米字格", cat: "hanzi", type: "mi", sizeKeys: ["10", "14", "20"], desc: "米字辅助线，适合笔画定位与书法练习。" },
     { id: "huigong", name: "回宫格", cat: "hanzi", type: "huigong", sizeKeys: ["14", "20"], desc: "内外双框，帮助把握字的整体与局部比例。" },
     { id: "jiugong", name: "九宫格", cat: "hanzi", type: "jiugong", sizeKeys: ["14", "20"], desc: "九宫划分，训练中宫收紧与四周舒展。" },
-    { id: "shufa", name: "书法纸", cat: "hanzi", type: "mi", sizeKeys: ["20", "25"], colorKeys: ["red", "black", "gray"], desc: "大格米字，毛笔书法临帖专用。" },
+    { id: "shufa", name: "毛笔米字格竖排", cat: "shufa", type: "maobimi", sizeKeys: ["20", "25"], colorKeys: ["red", "black", "gray"], desc: "竖排米字格，毛笔临帖与日常练习。" },
     { id: "miaohong", name: "描红格", cat: "hanzi", type: "tian", sizeKeys: ["14", "20"], desc: "描红临摹，初学者起步好帮手。" },
+
+    /* 书法纸（竖向排列：自右向左、自上而下） */
+    { id: "maobijie", name: "毛笔界格竖排", cat: "shufa", type: "maobijie", sizeKeys: ["20", "25"], colorKeys: ["red", "black", "gray"], desc: "宣纸/毛边纸界格（乌丝栏），竖写创作。" },
+    { id: "yingbitian", name: "硬笔田字格竖排", cat: "shufa", type: "yingbitian", sizeKeys: ["14", "18", "20"], desc: "竖排田字格，硬笔书法练字。" },
+    { id: "yingbige", name: "硬笔方格竖排", cat: "shufa", type: "yingbige", sizeKeys: ["14", "18", "20"], desc: "竖排方格，硬笔创作与抄写。" },
 
     /* 拼音英文 */
     { id: "pinyin-tian", name: "拼音田字格", cat: "pinyin", type: "pinyintian", sizeKeys: ["18"], desc: "上排拼音四线、下排田字，语文作业常用。" },
@@ -82,7 +90,16 @@
     /* 手账特殊 */
     { id: "zidanzhang", name: "子弹笔记", cat: "journal", type: "bullet", sizeKeys: ["7", "10", "14"], desc: "点阵子弹日记，规划与清单。" },
     { id: "cuotiben", name: "错题本", cat: "journal", type: "cuotiben", sizeKeys: ["fx"], desc: "分区错题整理，分析原因。" },
-    { id: "yuedu", name: "阅读笔记", cat: "journal", type: "yuedu", sizeKeys: ["fx"], desc: "左右分栏，摘录与感悟。" }
+    { id: "yuedu", name: "阅读笔记", cat: "journal", type: "yuedu", sizeKeys: ["fx"], desc: "左右分栏，摘录与感悟。" },
+
+    /* 作文纸 */
+    { id: "zuowen", name: "作文方格", cat: "zuowen", type: "zuowen", sizeKeys: ["14", "18"], desc: "方格作文纸，带班级/姓名/学号/日期抬头与标题行。" },
+    { id: "zuowenheng", name: "作文横格", cat: "zuowen", type: "zuowenH", sizeKeys: ["10", "14"], desc: "横格作文纸，带信息抬头与标题行。" },
+
+    /* 法律文书 */
+    { id: "court", name: "庭审记录格子", cat: "legal", type: "legalCourt", sizeKeys: ["10", "14"], desc: "方格加抬头（法院/案号/案由/时间地点/审判人员），庭审笔录专用。" },
+    { id: "bilu", name: "讯问笔录格子", cat: "legal", type: "legalBilu", sizeKeys: ["10", "14"], desc: "方格加抬头（案号/被询问人/时间地点/询问人），笔录专用。" },
+    { id: "legaldoc", name: "法律文书方格", cat: "legal", type: "legalDoc", sizeKeys: ["10", "14"], desc: "方格加抬头（文书名称/案号/当事人/日期），通用法律文书。" }
   ];
 
   /* 展开生成目录：家族 × 颜色 × 格子尺寸 = 数百种 */

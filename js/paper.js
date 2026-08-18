@@ -32,10 +32,14 @@
     ruled: "ruled", ruled2: "ruled", cornell: "ruled", letter: "ruled",
     arithmetic: "box", shushi: "ruled",
     staff: "box", comic: "box", cuotiben: "ruled", yuedu: "ruled",
-    qiangedraft: "box", blank: "ruled"
+    qiangedraft: "box", blank: "ruled",
+    maobimi: "box", maobijie: "box", yingbitian: "box", yingbige: "box",
+    zuowen: "box", zuowenH: "ruled",
+    legalCourt: "box", legalBilu: "box", legalDoc: "box"
   };
   var _mode = "box";   // 由 render() 按 type 设置，供各渲染器内的 geom() 读取
   var _frame = true;   // 由 render() 按是否加外框设置：决定是否采用舒适边距
+  var _thumb = false;  // 由 render() 按是否缩略图设置：模板文字不在缩略图里显示
 
   function r(n) { return Math.round(n * 100) / 100; }
   function L(x1, y1, x2, y2, c, sw) {
@@ -52,6 +56,17 @@
   function R(x, y, w, h, c, sw) {
     return '<rect x="' + r(x) + '" y="' + r(y) + '" width="' + r(w) + '" height="' + r(h) +
       '" fill="none" stroke="' + c + '" stroke-width="' + sw + '"/>';
+  }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function tw(str, size) {
+    var w = 0;
+    for (var i = 0; i < str.length; i++) w += (str.charCodeAt(i) > 255 ? size * 1.0 : size * 0.55);
+    return w;
+  }
+  function T(x, y, str, size, color, anchor) {
+    if (_thumb) return "";
+    return '<text x="' + r(x) + '" y="' + r(y) + '" font-family="\'PingFang SC\',\'Microsoft YaHei\',sans-serif" ' +
+      'font-size="' + size + '" fill="' + color + '" text-anchor="' + (anchor || "middle") + '">' + esc(str) + '</text>';
   }
 
   /* 计算“整数倍”几何（解决半格/半行/页边距问题）：
@@ -295,6 +310,95 @@
   }
   function blank() { return ''; }
 
+  /* ---------- 书法（竖向排列：自右向左、自上而下） ---------- */
+  function vcol(cell, color, sw, thumb, inner, heavy) {
+    if (inner === "grid" && !heavy) return gridInner(cell, color, sw, thumb);
+    var g = geom(cell, thumb), s = "", i, j, x, y;
+    // 横向浅线（行分隔）
+    for (j = 0; j <= g.nY; j++) { y = g.oy + j * cell; s += L(g.ox, y, g.ox + g.iw, y, color, sw * 0.8); }
+    // 竖向界格线（毛笔/硬笔书法加粗，模拟乌丝栏）
+    var vw = heavy ? sw * 1.8 : sw;
+    for (i = 0; i <= g.nX; i++) { x = g.ox + i * cell; s += L(x, g.oy, x, g.oy + g.ih, color, vw); }
+    // 格内辅助线（田字/米字）
+    if (inner === "tian" || inner === "mi") {
+      for (i = 0; i < g.nX; i++) for (j = 0; j < g.nY; j++) {
+        x = g.ox + i * cell; y = g.oy + j * cell;
+        s += L(x + cell / 2, y, x + cell / 2, y + cell, color, sw * 0.8);
+        s += L(x, y + cell / 2, x + cell, y + cell / 2, color, sw * 0.8);
+        if (inner === "mi") {
+          s += L(x, y, x + cell, y + cell, color, sw * 0.8);
+          s += L(x + cell, y, x, y + cell, color, sw * 0.8);
+        }
+      }
+    }
+    return s;
+  }
+  function maobimi(c, col, sw, t) { return vcol(c, col, sw, t, "mi", true); }
+  function maobijie(c, col, sw, t) { return vcol(c, col, sw, t, "none", true); }
+  function yingbitian(c, col, sw, t) { return vcol(c, col, sw, t, "tian", true); }
+  function yingbige(c, col, sw, t) { return vcol(c, col, sw, t, "grid", false); }
+
+  /* ---------- 作文纸（方格/横格 + 抬头模板） ---------- */
+  function zuowenHead(g, cell, color, sw) {
+    var s = T(g.ox + cell * 0.4, g.oy + cell * 0.85, "题目", 4.6, "#9aa0a6", "start");
+    var labels = ["班级", "姓名", "学号", "日期"], n = 4, fw = cell * 2.1, gap = cell * 0.45;
+    var totalW = n * fw + (n - 1) * gap, rx = g.ox + g.iw - totalW, ry = g.oy + cell * 0.12;
+    for (var k = 0; k < n; k++) {
+      var bx = rx + k * (fw + gap);
+      s += R(bx, ry, fw, cell * 0.8, color, sw * 1.1);
+      s += T(bx + fw / 2, ry + cell * 0.62, labels[k], 3.6, "#9aa0a6");
+    }
+    return s;
+  }
+  function zuowen(cell, color, sw, thumb) {
+    var g = geom(cell, thumb), headRows = 2, headBot = g.oy + headRows * cell, s = "", i, j, x, y;
+    var rows = Math.max(0, g.nY - headRows);
+    for (i = 1; i < g.nX; i++) { x = g.ox + i * cell; s += L(x, headBot, x, g.oy + g.ih, color, sw); }
+    for (j = 0; j <= rows; j++) { y = headBot + j * cell; s += L(g.ox, y, g.ox + g.iw, y, color, sw); }
+    s += L(g.ox, headBot, g.ox + g.iw, headBot, color, sw * 1.8);
+    s += zuowenHead(g, cell, color, sw);
+    return s;
+  }
+  function zuowenH(cell, color, sw, thumb) {
+    var g = geom(cell, thumb), headRows = 2, headBot = g.oy + headRows * cell, s = "", j, y;
+    var rows = Math.max(1, Math.floor((g.oy + g.ih - headBot) / cell));
+    for (j = 1; j <= rows; j++) { y = headBot + j * cell; s += L(g.ox, y, g.ox + g.iw, y, color, sw); }
+    s += L(g.ox, headBot, g.ox + g.iw, headBot, color, sw * 1.8);
+    s += zuowenHead(g, cell, color, sw);
+    return s;
+  }
+
+  /* ---------- 法律文书（方格 + 抬头字段模板） ---------- */
+  function legalBase(cell, color, sw, thumb, variant) {
+    var g = geom(cell, thumb), headRows = 4, headBot = g.oy + headRows * cell, s = "", i, j, x, y;
+    var rows = Math.max(0, g.nY - headRows);
+    for (i = 1; i < g.nX; i++) { x = g.ox + i * cell; s += L(x, headBot, x, g.oy + g.ih, color, sw); }
+    for (j = 0; j <= rows; j++) { y = headBot + j * cell; s += L(g.ox, y, g.ox + g.iw, y, color, sw); }
+    s += L(g.ox, headBot, g.ox + g.iw, headBot, color, sw * 1.8);
+    var title = variant === "court" ? "庭 审 笔 录" : variant === "bilu" ? "讯 问 笔 录" : "法 律 文 书";
+    s += T(g.ox + g.iw / 2, g.oy + cell * 0.9, title, 7, color);
+    s += L(g.ox + g.iw * 0.28, g.oy + cell * 1.2, g.ox + g.iw * 0.72, g.oy + cell * 1.2, color, sw * 1.2);
+    var fields = variant === "court"
+      ? [["案号"], ["案由"], ["时间"], ["地点"], ["审判长"], ["书记员"]]
+      : variant === "bilu"
+      ? [["案号"], ["被询问人"], ["时间"], ["地点"], ["询问人"], ["记录人"]]
+      : [["文书名称"], ["案号"], ["当事人"], ["日期"]];
+    var colW = g.iw / 2, perCol = Math.ceil(fields.length / 2);
+    for (var k = 0; k < fields.length; k++) {
+      var col = k < perCol ? 0 : 1, rowIdx = k % perCol;
+      var lx = g.ox + col * colW + cell * 0.4;
+      var ly = g.oy + cell * 1.5 + rowIdx * cell;
+      var lab = fields[k][0] + "：";
+      s += T(lx, ly + cell * 0.72, lab, 4.2, "#9aa0a6", "start");
+      var lineEnd = g.ox + (col + 1) * colW - cell * 0.4;
+      s += L(lx + tw(lab, 4.2) + 1, ly + cell * 0.8, lineEnd, ly + cell * 0.8, color, sw * 0.9);
+    }
+    return s;
+  }
+  function legalCourt(c, col, sw, t) { return legalBase(c, col, sw, t, "court"); }
+  function legalBilu(c, col, sw, t) { return legalBase(c, col, sw, t, "bilu"); }
+  function legalDoc(c, col, sw, t) { return legalBase(c, col, sw, t, "doc"); }
+
   var RENDERERS = {
     tian: tian, mi: mi, huigong: huigong, jiugong: jiugong,
     pinyintian: pinyintian, pinyinmi: pinyinmi,
@@ -303,7 +407,10 @@
     ruled: ruled, ruled2: ruled2, cornell: cornell, letter: letter,
     arithmetic: arithmetic, shushi: shushi,
     staff: staff, comic: comic, cuotiben: cuotiben, yuedu: yuedu,
-    qiangedraft: qiangedraft, blank: blank
+    qiangedraft: qiangedraft, blank: blank,
+    maobimi: maobimi, maobijie: maobijie, yingbitian: yingbitian, yingbige: yingbige,
+    zuowen: zuowen, zuowenH: zuowenH,
+    legalCourt: legalCourt, legalBilu: legalBilu, legalDoc: legalDoc
   };
 
   function render(type, opts) {
@@ -312,6 +419,7 @@
     var cell = opts.cell || 14;
     var thumb = !!opts.thumb;
     var frame = opts.frame !== false && !thumb;   // 仅完整预览/打印加框，缩略图保持干净
+    _thumb = thumb;                                // 模板文字不在缩略图里显示
     _mode = MODES[type] || "box";                 // 设定当前版式页边距模式，供渲染器内 geom() 读取
     _frame = frame;                                // 设定是否加外框，决定采用舒适边距还是最小安全边距
     var sw = 0.35;
