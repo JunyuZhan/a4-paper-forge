@@ -35,7 +35,7 @@
     qiangedraft: "box", blank: "ruled",
     maobimi: "box", maobijie: "box", yingbitian: "box", yingbige: "box",
     zuowen: "box", zuowenH: "ruled",
-    legalCourt: "box", legalCourt2: "box", legalBilu: "box", legalDoc: "box"
+    legalCourt: "ruled", legalCourt2: "ruled", legalBilu: "ruled", legalDoc: "box"
   };
   var _mode = "box";   // 由 render() 按 type 设置，供各渲染器内的 geom() 读取
   var _frame = true;   // 由 render() 按是否加外框设置：决定是否采用舒适边距
@@ -370,48 +370,74 @@
 
   /* ---------- 法律文书 ----------
    * 笔录/记录(庭审一审/二审、讯问) = 横线正文 + 完整案件信息表单（当事人及代理人等）；
-   * 稿纸(法律文书方格) = 方格正文，供起草文书。 */
-  // 通用字段：标签 + 填空横线；boundary 为该字段横线右端上限，避免两列相互重叠
-  function legalField(s, g, x, y, label, boundary, color, sw) {
-    var lab = label + "：";
-    s += T(x, y, lab, 4.2, "#6b7280", "start");
-    var lw = tw(lab, 4.2);
-    var x2 = x + lw + 1;
-    var len = Math.max(18, boundary - x2);
-    s += L(x2, y + 1.5, x2 + len, y + 1.5, color, sw * 0.9);
-    return s;
-  }
-  // 笔录/记录模板：抬头为案件信息表单，正文为横线（供书写记录）
+   * 稿纸(法律文书方格) = 方格正文，供起草文书。
+   * 防重叠策略：整页统一为一条条横线（ruled 模式，左右铺满）；每个标签文字都落在横线
+   * 上方（baseline = 该横线 y - 1.6mm），文字顶部与横线之间留白，绝不压线；分段标题
+   * （一、法庭调查 / 二、法庭辩论）同样压在各自横线之上。 */
+  // 笔录/记录模板（参考真实律所模板）：顶部案件信息表单 + 分段标题 + 横线正文，全程无方格
   function legalRecord(cell, color, sw, thumb, stage) {
-    var g = geom(cell, thumb), s = "";
+    var g = geom(cell, thumb), s = "", i, k;
     var title = stage === "court2" ? "二 审 庭 审 笔 录"
-      : stage === "bilu" ? "讯 问 笔 录" : "庭 审 笔 录";
-    s += T(g.ox + g.iw / 2, g.oy + 8, title, 8, color);
-    s += L(g.ox + g.iw * 0.30, g.oy + 10.5, g.ox + g.iw * 0.70, g.oy + 10.5, color, sw * 1.2);
-    var rowH = 11, formTop = g.oy + 17;
-    var xL = g.ox + 2, xR = g.ox + g.iw * 0.50;
-    var bL = g.ox + g.iw * 0.47, bR = g.ox + g.iw - 2;
+      : stage === "bilu" ? "讯 问 笔 录" : "一 审 庭 审 笔 录";
+    var tY = g.oy + (cell >= 12 ? 7 : 6);
+    s += T(g.ox + g.iw / 2, tY, title, 8, color, "middle");
+
+    // 表单行：[左标签, 左提示(灰, 填于标签后), 右标签]
     var rows;
     if (stage === "court2") {
-      rows = [["案号", "案由"], ["时间", "地点"], ["审判长（主审）", "审判员"],
-        ["书记员", "陪审员"], ["上诉人", "代理人"], ["被上诉人", "代理人"],
-        ["原审原告", "代理人"], ["原审被告", "代理人"], ["第三人", "代理人"]];
+      rows = [
+        ["开庭时间：", "年  月  日  时  分  至  时  分     第    次开庭", null],
+        ["开庭地点：", "人民法院第      审判庭", "记录人："],
+        ["案　　由：", null, null],
+        ["审判长（员）：", null, "书记员："],
+        ["上诉人：", null, "代理人："],
+        ["被上诉人：", null, "代理人："],
+        ["第三人：", null, "代理人："]
+      ];
     } else if (stage === "bilu") {
-      rows = [["案号", "案由"], ["时间", "地点"], ["讯问人", "记录人"], ["被讯问人", "单位及职务"]];
+      rows = [
+        ["案　　由：", null, null],
+        ["讯问时间：", "年  月  日  时  分  至  时  分", null],
+        ["讯问地点：", null, "记录人："],
+        ["讯问人：", null, "被讯问人："],
+        ["单位及职务：", null, null]
+      ];
     } else {
-      rows = [["案号", "案由"], ["时间", "地点"], ["审判长（主审）", "审判员"],
-        ["书记员", "陪审员"], ["原告", "代理人"], ["被告", "代理人"], ["第三人", "代理人"]];
+      rows = [
+        ["开庭时间：", "年  月  日  时  分  至  时  分     第    次开庭", null],
+        ["开庭地点：", "人民法院第      审判庭", "记录人："],
+        ["案　　由：", null, null],
+        ["审判长（员）：", null, "书记员："],
+        ["原告：", null, "代理人："],
+        ["被告：", null, "代理人："],
+        ["第三人：", null, "代理人："]
+      ];
     }
-    for (var ri = 0; ri < rows.length; ri++) {
-      var y = formTop + ri * rowH;
-      s = legalField(s, g, xL, y, rows[ri][0], bL, color, sw);
-      if (rows[ri][1]) s = legalField(s, g, xR, y, rows[ri][1], bR, color, sw);
+
+    var y = g.oy + cell;                 // 第一条横线（表单自此起）
+    var leftX = g.ox + 3, rightX = g.ox + g.iw * 0.5;
+    for (i = 0; i < rows.length; i++) {
+      s += L(g.ox, y, g.ox + g.iw, y, color, sw * 0.9);
+      s += T(leftX, y - 1.6, rows[i][0], 4.4, "#374151", "start");
+      if (rows[i][1]) s += T(leftX + tw(rows[i][0], 4.4) + 1.5, y - 1.6, rows[i][1], 3.6, "#9aa0a6", "start");
+      if (rows[i][2]) s += T(rightX, y - 1.6, rows[i][2], 4.4, "#374151", "start");
+      y += cell;
     }
-    var headerBottom = formTop + rows.length * rowH + 4;
-    s += L(g.ox, headerBottom, g.ox + g.iw, headerBottom, color, sw * 1.4);
-    var y2 = headerBottom + cell;
-    while (y2 <= g.oy + g.ih - 2) { s += L(g.ox, y2, g.ox + g.iw, y2, color, sw * 0.9); y2 += cell; }
-    s += T(g.ox + g.iw / 2, g.oy + g.ih - 4, "第        页      共        页", 3.6, "#9aa0a6");
+    s += L(g.ox, y - cell, g.ox + g.iw, y - cell, color, sw * 1.6); // 表单/正文分隔线
+
+    // 一、法庭调查
+    s += L(g.ox, y, g.ox + g.iw, y, color, sw * 1.2);
+    s += T(leftX, y - 1.6, "一、法庭调查：", 5, color, "start");
+    y += cell;
+    for (k = 0; k < 9 && y <= g.oy + g.ih - cell * 3; k++) { s += L(g.ox, y, g.ox + g.iw, y, color, sw * 0.9); y += cell; }
+
+    // 二、法庭辩论
+    s += L(g.ox, y, g.ox + g.iw, y, color, sw * 1.2);
+    s += T(leftX, y - 1.6, "二、法庭辩论：", 5, color, "start");
+    y += cell;
+    while (y <= g.oy + g.ih - 6) { s += L(g.ox, y, g.ox + g.iw, y, color, sw * 0.9); y += cell; }
+
+    s += T(g.ox + g.iw / 2, g.oy + g.ih - 3, "第          页        共          页", 3.6, "#9aa0a6", "middle");
     return s;
   }
   // 法律文书稿纸（方格起草用）：方格正文 + 抬头字段
