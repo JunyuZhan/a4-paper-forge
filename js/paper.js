@@ -265,18 +265,21 @@
     var color = opts.color || "#333333";
     var cell = opts.cell || 14;
     var thumb = !!opts.thumb;
-    var frame = opts.frame !== false;   // 默认加页面外框
+    var frame = opts.frame !== false && !thumb;   // 仅完整预览/打印加框，缩略图保持干净
     var sw = 0.35;
     var fn = RENDERERS[type] || gridType;
     var inner = fn(cell, color, sw, thumb);
-    var frameSvg = "";
-    if (frame && !thumb) {
-      // 距边 8mm 的细实线外框（仅完整预览/打印时绘制，缩略图保持干净）
-      frameSvg = R(8, 8, W - 16, H - 16, color, 0.7);
+    var frameSvg = "", defs = "", innerWrap = inner;
+    if (frame) {
+      var m = 8;                                  // 外框距边 8mm
+      frameSvg = R(m, m, W - 2 * m, H - 2 * m, color, 0.7);
+      // 关键：把内容裁剪到外框之内，避免网格/线条溢出到框外
+      defs = '<clipPath id="fc"><rect x="' + m + '" y="' + m + '" width="' + (W - 2 * m) + '" height="' + (H - 2 * m) + '"/></clipPath>';
+      innerWrap = '<g clip-path="url(#fc)">' + inner + '</g>';
     }
     return '<svg class="paper-svg" viewBox="0 0 210 297" preserveAspectRatio="xMidYMid meet" ' +
       'xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="210" height="297" fill="#ffffff"/>' +
-      frameSvg + inner + '</svg>';
+      defs + innerWrap + frameSvg + '</svg>';
   }
 
   window.Paper = { render: render };

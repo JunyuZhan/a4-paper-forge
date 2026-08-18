@@ -138,14 +138,16 @@ body {
 /* ---------------- 打印 ---------------- */
 @media print {
   @page { size: A4; margin: 0; }
+  html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
   .no-print { display: none !important; }
-  .preview-wrap {
-    border: none; box-shadow: none; padding: 0; margin: 0; border-radius: 0; background: #fff;
+  /* 让无关容器回归正常流并清零边距，纸张 #sheet 占满一页 A4 */
+  .layout, .content, .preview-wrap, .sheet-stage, #sheet {
+    display: block !important; margin: 0 !important; padding: 0 !important;
+    border: 0 !important; box-shadow: none !important; background: #fff !important; max-width: none !important;
   }
-  .sheet-stage { padding: 0; }
   #sheet {
-    position: fixed; inset: 0; margin: 0; width: 210mm; height: 297mm;
-    border: none; border-radius: 0; box-shadow: none; max-width: none; aspect-ratio: auto; background: #fff;
+    width: 210mm !important; height: 297mm !important;
+    aspect-ratio: auto !important; page-break-after: avoid;
   }
   #sheet svg {
     width: 100% !important; height: 100% !important; display: block !important;
