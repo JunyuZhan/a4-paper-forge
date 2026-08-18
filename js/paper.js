@@ -35,7 +35,7 @@
     qiangedraft: "box", blank: "ruled",
     maobimi: "box", maobijie: "box", yingbitian: "box", yingbige: "box",
     zuowen: "box", zuowenH: "ruled",
-    legalCourt: "box", legalBilu: "box", legalDoc: "box"
+    legalCourt: "box", legalCourt2: "box", legalBilu: "box", legalDoc: "box"
   };
   var _mode = "box";   // 由 render() 按 type 设置，供各渲染器内的 geom() 读取
   var _frame = true;   // 由 render() 按是否加外框设置：决定是否采用舒适边距
@@ -368,35 +368,77 @@
     return s;
   }
 
-  /* ---------- 法律文书（方格 + 抬头字段模板） ---------- */
+  /* ---------- 法律文书 ----------
+   * 笔录/记录(庭审一审/二审、讯问) = 横线正文 + 完整案件信息表单（当事人及代理人等）；
+   * 稿纸(法律文书方格) = 方格正文，供起草文书。 */
+  // 通用字段：标签 + 填空横线；boundary 为该字段横线右端上限，避免两列相互重叠
+  function legalField(s, g, x, y, label, boundary, color, sw) {
+    var lab = label + "：";
+    s += T(x, y, lab, 4.2, "#6b7280", "start");
+    var lw = tw(lab, 4.2);
+    var x2 = x + lw + 1;
+    var len = Math.max(18, boundary - x2);
+    s += L(x2, y + 1.5, x2 + len, y + 1.5, color, sw * 0.9);
+    return s;
+  }
+  // 笔录/记录模板：抬头为案件信息表单，正文为横线（供书写记录）
+  function legalRecord(cell, color, sw, thumb, stage) {
+    var g = geom(cell, thumb), s = "";
+    var title = stage === "court2" ? "二 审 庭 审 笔 录"
+      : stage === "bilu" ? "讯 问 笔 录" : "庭 审 笔 录";
+    s += T(g.ox + g.iw / 2, g.oy + 8, title, 8, color);
+    s += L(g.ox + g.iw * 0.30, g.oy + 10.5, g.ox + g.iw * 0.70, g.oy + 10.5, color, sw * 1.2);
+    var rowH = 11, formTop = g.oy + 17;
+    var xL = g.ox + 2, xR = g.ox + g.iw * 0.50;
+    var bL = g.ox + g.iw * 0.47, bR = g.ox + g.iw - 2;
+    var rows;
+    if (stage === "court2") {
+      rows = [["案号", "案由"], ["时间", "地点"], ["审判长（主审）", "审判员"],
+        ["书记员", "陪审员"], ["上诉人", "代理人"], ["被上诉人", "代理人"],
+        ["原审原告", "代理人"], ["原审被告", "代理人"], ["第三人", "代理人"]];
+    } else if (stage === "bilu") {
+      rows = [["案号", "案由"], ["时间", "地点"], ["讯问人", "记录人"], ["被讯问人", "单位及职务"]];
+    } else {
+      rows = [["案号", "案由"], ["时间", "地点"], ["审判长（主审）", "审判员"],
+        ["书记员", "陪审员"], ["原告", "代理人"], ["被告", "代理人"], ["第三人", "代理人"]];
+    }
+    for (var ri = 0; ri < rows.length; ri++) {
+      var y = formTop + ri * rowH;
+      s = legalField(s, g, xL, y, rows[ri][0], bL, color, sw);
+      if (rows[ri][1]) s = legalField(s, g, xR, y, rows[ri][1], bR, color, sw);
+    }
+    var headerBottom = formTop + rows.length * rowH + 4;
+    s += L(g.ox, headerBottom, g.ox + g.iw, headerBottom, color, sw * 1.4);
+    var y2 = headerBottom + cell;
+    while (y2 <= g.oy + g.ih - 2) { s += L(g.ox, y2, g.ox + g.iw, y2, color, sw * 0.9); y2 += cell; }
+    s += T(g.ox + g.iw / 2, g.oy + g.ih - 4, "第        页      共        页", 3.6, "#9aa0a6");
+    return s;
+  }
+  // 法律文书稿纸（方格起草用）：方格正文 + 抬头字段
   function legalBase(cell, color, sw, thumb, variant) {
-    var g = geom(cell, thumb), headRows = 4, headBot = g.oy + headRows * cell, s = "", i, j, x, y;
+    var g = geom(cell, thumb), headRows = 3, headBot = g.oy + headRows * cell, s = "", i, j, x, y;
     var rows = Math.max(0, g.nY - headRows);
     for (i = 1; i < g.nX; i++) { x = g.ox + i * cell; s += L(x, headBot, x, g.oy + g.ih, color, sw); }
     for (j = 0; j <= rows; j++) { y = headBot + j * cell; s += L(g.ox, y, g.ox + g.iw, y, color, sw); }
     s += L(g.ox, headBot, g.ox + g.iw, headBot, color, sw * 1.8);
-    var title = variant === "court" ? "庭 审 笔 录" : variant === "bilu" ? "讯 问 笔 录" : "法 律 文 书";
-    s += T(g.ox + g.iw / 2, g.oy + cell * 0.9, title, 7, color);
+    s += T(g.ox + g.iw / 2, g.oy + cell * 0.9, "法 律 文 书 稿 纸", 7, color);
     s += L(g.ox + g.iw * 0.28, g.oy + cell * 1.2, g.ox + g.iw * 0.72, g.oy + cell * 1.2, color, sw * 1.2);
-    var fields = variant === "court"
-      ? [["案号"], ["案由"], ["时间"], ["地点"], ["审判长"], ["书记员"]]
-      : variant === "bilu"
-      ? [["案号"], ["被询问人"], ["时间"], ["地点"], ["询问人"], ["记录人"]]
-      : [["文书名称"], ["案号"], ["当事人"], ["日期"]];
-    var colW = g.iw / 2, perCol = Math.ceil(fields.length / 2);
+    var fields = [["文书名称"], ["案号"], ["当事人"], ["日期"]];
+    var colW = g.iw / 2, perCol = 2;
     for (var k = 0; k < fields.length; k++) {
       var col = k < perCol ? 0 : 1, rowIdx = k % perCol;
       var lx = g.ox + col * colW + cell * 0.4;
-      var ly = g.oy + cell * 1.5 + rowIdx * cell;
+      var ly = g.oy + cell * 0.3 + rowIdx * cell;
       var lab = fields[k][0] + "：";
-      s += T(lx, ly + cell * 0.72, lab, 4.2, "#9aa0a6", "start");
+      s += T(lx, ly + cell * 0.7, lab, 4.2, "#9aa0a6", "start");
       var lineEnd = g.ox + (col + 1) * colW - cell * 0.4;
-      s += L(lx + tw(lab, 4.2) + 1, ly + cell * 0.8, lineEnd, ly + cell * 0.8, color, sw * 0.9);
+      s += L(lx + tw(lab, 4.2) + 1, ly + cell * 0.78, lineEnd, ly + cell * 0.78, color, sw * 0.9);
     }
     return s;
   }
-  function legalCourt(c, col, sw, t) { return legalBase(c, col, sw, t, "court"); }
-  function legalBilu(c, col, sw, t) { return legalBase(c, col, sw, t, "bilu"); }
+  function legalCourt(c, col, sw, t) { return legalRecord(c, col, sw, t, "court1"); }
+  function legalCourt2(c, col, sw, t) { return legalRecord(c, col, sw, t, "court2"); }
+  function legalBilu(c, col, sw, t) { return legalRecord(c, col, sw, t, "bilu"); }
   function legalDoc(c, col, sw, t) { return legalBase(c, col, sw, t, "doc"); }
 
   var RENDERERS = {
@@ -410,7 +452,7 @@
     qiangedraft: qiangedraft, blank: blank,
     maobimi: maobimi, maobijie: maobijie, yingbitian: yingbitian, yingbige: yingbige,
     zuowen: zuowen, zuowenH: zuowenH,
-    legalCourt: legalCourt, legalBilu: legalBilu, legalDoc: legalDoc
+    legalCourt: legalCourt, legalCourt2: legalCourt2, legalBilu: legalBilu, legalDoc: legalDoc
   };
 
   function render(type, opts) {

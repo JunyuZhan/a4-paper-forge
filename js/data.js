@@ -97,9 +97,10 @@
     { id: "zuowenheng", name: "作文横格", cat: "zuowen", type: "zuowenH", sizeKeys: ["10", "14"], desc: "横格作文纸，带信息抬头与标题行。" },
 
     /* 法律文书 */
-    { id: "court", name: "庭审记录格子", cat: "legal", type: "legalCourt", sizeKeys: ["10", "14"], desc: "方格加抬头（法院/案号/案由/时间地点/审判人员），庭审笔录专用。" },
-    { id: "bilu", name: "讯问笔录格子", cat: "legal", type: "legalBilu", sizeKeys: ["10", "14"], desc: "方格加抬头（案号/被询问人/时间地点/询问人），笔录专用。" },
-    { id: "legaldoc", name: "法律文书方格", cat: "legal", type: "legalDoc", sizeKeys: ["10", "14"], desc: "方格加抬头（文书名称/案号/当事人/日期），通用法律文书。" }
+    { id: "court", name: "庭审笔录（一审）", cat: "legal", type: "legalCourt", sizeKeys: ["10", "14"], desc: "横线正文 + 案件信息表单：时间/地点/主审/原告·被告·第三人及各自代理人。" },
+    { id: "court2", name: "庭审笔录（二审）", cat: "legal", type: "legalCourt2", sizeKeys: ["10", "14"], desc: "横线正文 + 二审表单：上诉人/被上诉人、原审原告/被告及各自代理人、第三人。" },
+    { id: "bilu", name: "讯问笔录", cat: "legal", type: "legalBilu", sizeKeys: ["10", "14"], desc: "横线正文 + 讯问表单：案号/案由/时间地点/讯问人/记录人/被讯问人及单位职务。" },
+    { id: "legaldoc", name: "法律文书方格稿纸", cat: "legal", type: "legalDoc", sizeKeys: ["10", "14"], desc: "方格起草稿纸，带抬头（文书名称/案号/当事人/日期），用于撰写法律文书。" }
   ];
 
   /* 展开生成目录：家族 × 颜色 × 格子尺寸 = 数百种 */
