@@ -379,7 +379,8 @@
     var g = geom(cell, thumb), s = "", i, k;
     var title = stage === "court2" ? "二 审 庭 审 笔 录"
       : stage === "bilu" ? "讯 问 笔 录" : "一 审 庭 审 笔 录";
-    var tY = g.oy + (cell >= 12 ? 7 : 6);
+    var headH = Math.max(cell, 12);
+    var tY = g.oy + Math.max(headH * 0.5, 7);
     s += T(g.ox + g.iw / 2, tY, title, 8, color, "middle");
 
     // 表单行：[左标签, 左提示(灰, 填于标签后), 右标签]
@@ -414,7 +415,7 @@
       ];
     }
 
-    var y = g.oy + cell;                 // 第一条横线（表单自此起）
+    var y = g.oy + headH;                 // 头带下沿（标题与表单分隔线）
     var leftX = g.ox + 3, rightX = g.ox + g.iw * 0.5;
     for (i = 0; i < rows.length; i++) {
       s += L(g.ox, y, g.ox + g.iw, y, color, sw * 0.9);
@@ -425,16 +426,7 @@
     }
     s += L(g.ox, y - cell, g.ox + g.iw, y - cell, color, sw * 1.6); // 表单/正文分隔线
 
-    // 一、法庭调查
-    s += L(g.ox, y, g.ox + g.iw, y, color, sw * 1.2);
-    s += T(leftX, y - 1.6, "一、法庭调查：", 5, color, "start");
-    y += cell;
-    for (k = 0; k < 9 && y <= g.oy + g.ih - cell * 3; k++) { s += L(g.ox, y, g.ox + g.iw, y, color, sw * 0.9); y += cell; }
-
-    // 二、法庭辩论
-    s += L(g.ox, y, g.ox + g.iw, y, color, sw * 1.2);
-    s += T(leftX, y - 1.6, "二、法庭辩论：", 5, color, "start");
-    y += cell;
+    // 正文：纯横线，内容区留白供记录（无分段标题）
     while (y <= g.oy + g.ih - 6) { s += L(g.ox, y, g.ox + g.iw, y, color, sw * 0.9); y += cell; }
 
     s += T(g.ox + g.iw / 2, g.oy + g.ih - 3, "第          页        共          页", 3.6, "#9aa0a6", "middle");
